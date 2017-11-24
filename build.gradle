@@ -1,0 +1,50 @@
+import de.undercouch.gradle.tasks.download.Download
+
+
+
+plugins {
+  id 'nebula.ospackage' version '3.4.0'
+  id 'nebula.nebula-release' version '4.0.1'
+  id 'com.jfrog.artifactory' version '4.1.1'
+  id "de.undercouch.download" version "3.0.0"
+}
+
+
+
+
+repositories {
+    maven { url "${artifactoryUrl}/cpe-plugins-release-local/" }
+}
+
+task downloadSource(type: Download) {
+    src "${sourceArtifactUrl}/${sourceArtifactRepository}/${sourceArtifactPath}/${sourceArtifactName}"
+    dest ".downloadedArtifacts/source/${finalSourceArtifactName}"
+    overwrite false
+}
+
+project.tasks.build.dependsOn(buildRpm)
+
+buildRpm {
+ 
+
+ packageName rpmName
+    version rpmVersion
+    release rpmRelease
+    arch X86_64
+    os LINUX
+
+  
+  requires('jre')
+  
+
+  preInstall file('pkg_scripts/preInstall.sh')
+  postInstall file('pkg_scripts/postInstall.sh')
+
+  from(".downloadedArtifacts/source/${finalSourceArtifactName}") {
+    into "/opt/bigdata"
+    fileMode 0644
+    user 'root'
+    permissionGroup 'root'
+  }
+
+}
